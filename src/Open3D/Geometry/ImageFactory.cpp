@@ -24,6 +24,10 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#include <iostream>
+#include <Eigen/Dense>
+#include <cmath>
+
 #include "Open3D/Camera/PinholeCameraIntrinsic.h"
 #include "Open3D/Geometry/Image.h"
 
@@ -58,6 +62,67 @@ std::shared_ptr<Image> Image::CreateDepthToCameraDistanceMultiplierFloatImage(
         }
     }
     return fimage;
+}
+
+std::shared_ptr<Image> Image::CreateWeightImage(
+        const camera::PinholeCameraIntrinsic &intrinsic) const {
+
+    auto output = std::make_shared<Image>();
+
+    //Need to check if this is needed or nor. I am not sure how it is used -KB
+    output->Prepare(intrinsic.width_, intrinsic.height_, 1, 4);
+    auto focal_length = intrinsic.GetFocalLength();
+    auto principal_point = intrinsic.GetPrincipalPoint();
+
+    #ifdef _OPENMP
+    #ifdef _WIN32
+    #pragma omp parallel for schedule(static)
+    #else
+    #pragma omp parallel for collapse(2) schedule(static)
+    #endif
+    #endif
+    for (int i = 0; i < output->height_; i++) {
+        for (int j = 0; j < output->width_; j++) {
+            float *p = output->PointerAt<float>(j, i);
+            float *ip = PointerAt<float>(j, i);
+            double weight = 0;
+
+            if (*ip > 0) {
+                if(i > 0 && j > 0 && i < output->height_-1 && j < output->width_-1){
+
+                    // computing normalized vertex
+                    double z = (double)(*ip);
+                    double x = (j - principal_point.first) * z / focal_length.first;
+                    double y =
+                            (i - principal_point.second) * z / focal_length.second;
+                    Eigen::Vector3d point = Eigen::Vector3d(x, y, z);
+                    Eigen::Vector3d v_norm = point.normalized();
+
+                    //computing normalized normal
+                    float *dx1 = PointerAt<float>(j+1, i);
+                    float *dx2 = PointerAt<float>(j-1, i);
+
+                    float *dy1 = PointerAt<float>(j, i+1);
+                    float *dy2 = PointerAt<float>(j, i-1);
+
+                    double dzdx = (((double)*dx1 - (double)*dx2)/2.0)*1000.0;
+                    double dzdy = (((double)*dy1 - (double)*dy2)/2.0)*1000.0;
+
+                    Eigen::Vector3d normal = Eigen::Vector3d(-dzdx, -dzdy, 1.0);
+                    Eigen::Vector3d n_norm = normal.normalized();
+
+                    Eigen::Vector3d captureDir = Eigen::Vector3d(0, 0, 1.0);
+
+                    double w1 = abs(captureDir.dot(n_norm));
+                    double w2 = abs(captureDir.dot(v_norm));
+
+                    weight = w1 * w2;
+                }
+            }
+            *p = (float)weight;
+        }
+    }
+    return output;
 }
 
 std::shared_ptr<Image> Image::CreateFloatImage(

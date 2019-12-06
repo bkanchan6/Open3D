@@ -146,6 +146,19 @@ public:
     CreateDepthToCameraDistanceMultiplierFloatImage(
             const camera::PinholeCameraIntrinsic &intrinsic);
 
+
+    // Function to create a float image of weights map
+    // It is computed by first constructing a normalized normal
+    // map and vertex map. Then for each pixel two weights are
+    // computed w1 = dot(v,c) and w2 = dot(n,c) where v is
+    // normalized vertex v, n is normalized normal at pixel (u,v)
+    // and c is capturing direction [0, 0, 1]
+    // Final weight w(v,u) = w1 * w2
+    // This function is implemented in Image.cpp
+
+    std::shared_ptr<Image> CreateWeightImage(
+        const camera::PinholeCameraIntrinsic &intrinsic) const;
+
     /// Return a gray scaled float type image.
     std::shared_ptr<Image> CreateFloatImage(
             Image::ColorToIntensityConversionType type =

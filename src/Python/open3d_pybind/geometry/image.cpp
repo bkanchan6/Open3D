@@ -23,7 +23,7 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
-
+#include "Open3D/Camera/PinholeCameraIntrinsic.h"
 #include "Open3D/Geometry/Image.h"
 #include "Open3D/Geometry/RGBDImage.h"
 #include "open3d_pybind/docstring.h"
@@ -198,6 +198,20 @@ void pybind_image(py::module &m) {
                  },
                  "Function to create ImagePyramid", "num_of_levels"_a,
                  "with_gaussian_filter"_a)
+            .def("create_weight_map",
+                 [](const geometry::Image &input,
+                  const camera::PinholeCameraIntrinsic &intrinsic) {
+                     if (input.num_of_channels_ != 1 ||
+                         input.bytes_per_channel_ != 4) {
+                         auto input_f = input.CreateFloatImage();
+                         auto output = input_f->CreateWeightImage(intrinsic);
+                         return output;
+                     } else {
+                         auto output = input.CreateWeightImage(intrinsic);
+                         return output;
+                     }
+                    },
+                    "Function to create weightmap", "intrinsic"_a)
             .def_static("filter_pyramid",
                         [](const geometry::ImagePyramid &input,
                            geometry::Image::FilterType filter_type) {
@@ -213,6 +227,8 @@ void pybind_image(py::module &m) {
     docstring::ClassMethodDocInject(m, "Image", "create_pyramid",
                                     map_shared_argument_docstrings);
     docstring::ClassMethodDocInject(m, "Image", "filter_pyramid",
+                                    map_shared_argument_docstrings);
+    docstring::ClassMethodDocInject(m, "Image", "create_weight_map",
                                     map_shared_argument_docstrings);
 
     py::class_<geometry::RGBDImage, PyGeometry2D<geometry::RGBDImage>,
