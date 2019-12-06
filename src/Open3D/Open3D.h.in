@@ -53,6 +53,7 @@
 #include "Open3D/IO/ClassIO/TriangleMeshIO.h"
 #include "Open3D/IO/ClassIO/VoxelGridIO.h"
 #include "Open3D/Integration/ScalableTSDFVolume.h"
+#include "Open3D/Integration/WeightedScalableTSDFVolume.h"
 #include "Open3D/Integration/TSDFVolume.h"
 #include "Open3D/Integration/UniformTSDFVolume.h"
 #include "Open3D/Odometry/Odometry.h"

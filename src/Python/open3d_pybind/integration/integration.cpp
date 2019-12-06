@@ -26,6 +26,7 @@
 
 #include "Open3D/Geometry/VoxelGrid.h"
 #include "Open3D/Integration/ScalableTSDFVolume.h"
+#include "Open3D/Integration/WeightedScalableTSDFVolume.h"
 #include "Open3D/Integration/TSDFVolume.h"
 #include "Open3D/Integration/UniformTSDFVolume.h"
 
@@ -205,7 +206,61 @@ In SIGGRAPH, 2013)");
                  "cloud.");
     docstring::ClassMethodDocInject(m, "ScalableTSDFVolume",
                                     "extract_voxel_point_cloud");
+
+
+    // open3d.integration.WeightedScalableTSDFVolume: open3d.integration.TSDFVolume
+    py::class_<integration::WeightedScalableTSDFVolume,
+               PyTSDFVolume<integration::WeightedScalableTSDFVolume>,
+               integration::TSDFVolume>
+            weighted_scalable_tsdfvolume(m, "WeightedScalableTSDFVolume", R"(The
+WeightedScalableTSDFVolume implements a more memory efficient data structure for
+volumetric integration.
+
+An observed depth pixel gives two types of information: (a) an approximation
+of the nearby surface, and (b) empty space from the camera to the surface.
+They induce two core concepts of volumetric integration: weighted average of
+a truncated signed distance function (TSDF), and carving. The weighted
+average of TSDF is great in addressing the Gaussian noise along surface
+normal and producing a smooth surface output. The carving is great in
+removing outlier structures like floating noise pixels and bumps along
+structure edges.
+
+Ref: Dense Scene Reconstruction with Points of Interest
+
+Q.-Y. Zhou and V. Koltun
+
+In SIGGRAPH, 2013)");
+    py::detail::bind_copy_functions<integration::WeightedScalableTSDFVolume>(
+            weighted_scalable_tsdfvolume);
+    weighted_scalable_tsdfvolume
+            .def(py::init([](double voxel_length, double sdf_trunc,
+                             integration::TSDFVolumeColorType color_type,
+                             int volume_unit_resolution,
+                             int depth_sampling_stride) {
+                     return new integration::WeightedScalableTSDFVolume(
+                             voxel_length, sdf_trunc, color_type,
+                             volume_unit_resolution, depth_sampling_stride);
+                 }),
+                 "voxel_length"_a, "sdf_trunc"_a, "color_type"_a,
+                 "volume_unit_resolution"_a = 16, "depth_sampling_stride"_a = 4)
+            .def("__repr__",
+                 [](const integration::WeightedScalableTSDFVolume &vol) {
+                     return std::string("integration::WeightedScalableTSDFVolume ") +
+                            (vol.color_type_ ==
+                                             integration::TSDFVolumeColorType::
+                                                     NoColor
+                                     ? std::string("without color.")
+                                     : std::string("with color."));
+                 })
+            .def("extract_voxel_point_cloud",
+                 &integration::WeightedScalableTSDFVolume::ExtractVoxelPointCloud,
+                 "Debug function to extract the voxel data into a point "
+                 "cloud.");
+    docstring::ClassMethodDocInject(m, "WeightedScalableTSDFVolume",
+                                    "extract_voxel_point_cloud");
 }
+
+
 
 void pybind_integration_methods(py::module &m) {
     // Currently empty
