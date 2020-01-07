@@ -24,7 +24,9 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#include <algorithm>
 #include <iostream>
+
 #include <Eigen/Dense>
 #include <cmath>
 
@@ -69,7 +71,7 @@ std::shared_ptr<Image> Image::CreateWeightImage(
 
     auto output = std::make_shared<Image>();
 
-    //Need to check if this is needed or nor. I am not sure how it is used -KB
+
     output->Prepare(intrinsic.width_, intrinsic.height_, 1, 4);
     auto focal_length = intrinsic.GetFocalLength();
     auto principal_point = intrinsic.GetPrincipalPoint();
@@ -85,7 +87,7 @@ std::shared_ptr<Image> Image::CreateWeightImage(
         for (int j = 0; j < output->width_; j++) {
             float *p = output->PointerAt<float>(j, i);
             float *ip = PointerAt<float>(j, i);
-            double weight = 0;
+            double weight = 0.0;  
 
             if (*ip > 0) {
                 if(i > 0 && j > 0 && i < output->height_-1 && j < output->width_-1){
@@ -111,13 +113,29 @@ std::shared_ptr<Image> Image::CreateWeightImage(
                     Eigen::Vector3d normal = Eigen::Vector3d(-dzdx, -dzdy, 1.0);
                     Eigen::Vector3d n_norm = normal.normalized();
 
-                    Eigen::Vector3d captureDir = Eigen::Vector3d(0, 0, 1.0);
+                    // Eigen::Vector3d captureDir = Eigen::Vector3d(0, 0, 1.0);
 
-                    double w1 = abs(captureDir.dot(n_norm));
-                    double w2 = abs(captureDir.dot(v_norm));
+                    // double w1 = abs(captureDir.dot(n_norm));
+                    // double w2 = abs(captureDir.dot(v_norm));
+                    
+                    // weight = w1;
+                    // weight = w2;
+                    double w = abs(n_norm.dot(v_norm));
+                    weight = w * w;
+                    
+                    // // Adding gaussian weight centering at principle point
+                    // double w = (double)output->width_/2.0;
+                    // double h = (double)output->height_/2.0;
+                    // double w_x = ((double)j - w)/w ;
+                    // double w_y = ((double)i - h)/h;
 
-                    weight = w1 * w2;
+                    // double d = sqrt(w_x * w_x + w_y * w_y);  
+                    // weight = exp(-((d*d)/(2.0))); // assuming mu = 0 and sigma = 1.0
                 }
+                else{
+                    weight = 1.0f; // if this weight is set to 0, some of the points are missing in final integrated reconstruction. Therefore assigning it 1.0
+                }
+
             }
             *p = (float)weight;
         }

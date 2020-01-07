@@ -29,6 +29,7 @@
 #include "Open3D/Integration/WeightedScalableTSDFVolume.h"
 #include "Open3D/Integration/TSDFVolume.h"
 #include "Open3D/Integration/UniformTSDFVolume.h"
+#include "Open3D/Integration/WeightedUniformTSDFVolume.h"
 
 #include "open3d_pybind/docstring.h"
 #include "open3d_pybind/integration/integration.h"
@@ -154,6 +155,48 @@ In SIGGRAPH, 1996)");
                            "Resolution over the total length, where "
                            "``voxel_length = length / resolution``");
     docstring::ClassMethodDocInject(m, "UniformTSDFVolume",
+                                    "extract_voxel_point_cloud");
+
+    // open3d.integration.WeightedUniformTSDFVolume: open3d.integration.TSDFVolume
+    py::class_<integration::WeightedUniformTSDFVolume,
+               PyTSDFVolume<integration::WeightedUniformTSDFVolume>,
+               integration::TSDFVolume>
+            weighted_uniform_tsdfvolume(
+                    m, "WeightedUniformTSDFVolume",
+                    "WeightedUniformTSDFVolume implements the classic TSDF "
+                    "volume with uniform voxel grid (Curless and Levoy 1996).");
+    py::detail::bind_copy_functions<integration::WeightedUniformTSDFVolume>(
+            weighted_uniform_tsdfvolume);
+    weighted_uniform_tsdfvolume
+            .def(py::init([](double length, int resolution, double sdf_trunc,
+                             integration::TSDFVolumeColorType color_type) {
+                     return new integration::WeightedUniformTSDFVolume(
+                             length, resolution, sdf_trunc, color_type);
+                 }),
+                 "length"_a, "resolution"_a, "sdf_trunc"_a, "color_type"_a)
+            .def("__repr__",
+                 [](const integration::WeightedUniformTSDFVolume &vol) {
+                     return std::string("integration::WeightedUniformTSDFVolume ") +
+                            (vol.color_type_ ==
+                                             integration::TSDFVolumeColorType::
+                                                     NoColor
+                                     ? std::string("without color.")
+                                     : std::string("with color."));
+                 })  // todo: extend
+            .def("extract_voxel_point_cloud",
+                 &integration::WeightedUniformTSDFVolume::ExtractVoxelPointCloud,
+                 "Debug function to extract the voxel data into a point cloud.")
+            .def("extract_voxel_grid",
+                 &integration::WeightedUniformTSDFVolume::ExtractVoxelGrid,
+                 "Debug function to extract the voxel data VoxelGrid.")
+            .def_readwrite("length", &integration::WeightedUniformTSDFVolume::length_,
+                           "Total length, where ``voxel_length = length / "
+                           "resolution``.")
+            .def_readwrite("resolution",
+                           &integration::WeightedUniformTSDFVolume::resolution_,
+                           "Resolution over the total length, where "
+                           "``voxel_length = length / resolution``");
+    docstring::ClassMethodDocInject(m, "WeightedUniformTSDFVolume",
                                     "extract_voxel_point_cloud");
 
     // open3d.integration.ScalableTSDFVolume: open3d.integration.TSDFVolume

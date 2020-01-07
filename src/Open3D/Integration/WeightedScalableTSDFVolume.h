@@ -35,7 +35,7 @@
 namespace open3d {
 namespace integration {
 
-class UniformTSDFVolume;
+class WeightedUniformTSDFVolume;
 
 /// Class that implements a more memory efficient data structure for volumetric
 /// integration
@@ -62,7 +62,7 @@ public:
         VolumeUnit() : volume_(NULL) {}
 
     public:
-        std::shared_ptr<UniformTSDFVolume> volume_;
+        std::shared_ptr<WeightedUniformTSDFVolume> volume_;
         Eigen::Vector3i index_;
     };
 
@@ -103,7 +103,7 @@ private:
                                (int)std::floor(point(2) / volume_unit_length_));
     }
 
-    std::shared_ptr<UniformTSDFVolume> OpenVolumeUnit(
+    std::shared_ptr<WeightedUniformTSDFVolume> OpenVolumeUnit(
             const Eigen::Vector3i &index);
 
     Eigen::Vector3d GetNormalAt(const Eigen::Vector3d &p);

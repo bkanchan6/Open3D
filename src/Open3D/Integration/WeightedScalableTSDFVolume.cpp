@@ -30,7 +30,7 @@
 
 #include "Open3D/Geometry/PointCloud.h"
 #include "Open3D/Integration/MarchingCubesConst.h"
-#include "Open3D/Integration/UniformTSDFVolume.h"
+#include "Open3D/Integration/WeightedUniformTSDFVolume.h"
 #include "Open3D/Utility/Console.h"
 
 namespace open3d {
@@ -76,6 +76,9 @@ void WeightedScalableTSDFVolume::Integrate(
     auto depth2cameradistance =
             geometry::Image::CreateDepthToCameraDistanceMultiplierFloatImage(
                     intrinsic);
+
+    auto weight_map = image.depth_.CreateWeightImage(intrinsic);
+
     auto pointcloud = geometry::PointCloud::CreateFromDepthImage(
             image.depth_, intrinsic, extrinsic, 1000.0, 1000.0,
             depth_sampling_stride_);
@@ -95,9 +98,10 @@ void WeightedScalableTSDFVolume::Integrate(
                         touched_volume_units_.end()) {
                         touched_volume_units_.insert(loc);
                         auto volume = OpenVolumeUnit(Eigen::Vector3i(x, y, z));
-                        volume->IntegrateWithDepthToCameraDistanceMultiplier(
+                        volume->IntegrateWithDepthToCameraDistanceMultiplierWeight(
                                 image, intrinsic, extrinsic,
-                                *depth2cameradistance);
+                                *depth2cameradistance,
+                                *weight_map);
                     }
                 }
             }
@@ -369,11 +373,11 @@ WeightedScalableTSDFVolume::ExtractVoxelPointCloud() {
     return voxel;
 }
 
-std::shared_ptr<UniformTSDFVolume> WeightedScalableTSDFVolume::OpenVolumeUnit(
+std::shared_ptr<WeightedUniformTSDFVolume> WeightedScalableTSDFVolume::OpenVolumeUnit(
         const Eigen::Vector3i &index) {
     auto &unit = volume_units_[index];
     if (!unit.volume_) {
-        unit.volume_.reset(new UniformTSDFVolume(
+        unit.volume_.reset(new WeightedUniformTSDFVolume(
                 volume_unit_length_, volume_unit_resolution_, sdf_trunc_,
                 color_type_, index.cast<double>() * volume_unit_length_));
         unit.index_ = index;
