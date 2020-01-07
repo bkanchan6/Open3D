@@ -56,6 +56,7 @@
 #include "Open3D/Integration/WeightedScalableTSDFVolume.h"
 #include "Open3D/Integration/TSDFVolume.h"
 #include "Open3D/Integration/UniformTSDFVolume.h"
+#include "Open3D/Integration/WeightedUniformTSDFVolume.h"
 #include "Open3D/Odometry/Odometry.h"
 #include "Open3D/Open3DConfig.h"
 #include "Open3D/Registration/Feature.h"
